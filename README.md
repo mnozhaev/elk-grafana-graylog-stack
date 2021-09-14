@@ -38,7 +38,6 @@ $ sudo sysctl -w vm.max_map_count=262144
 - Start docker-compose with `docker-compose -d up`)
   - Be patient, wait at least 5 minutes so all the services have plenty of time to comunicate with each other and setup the initial configuration. Grab a cup of coffee or tea or water or something more powerful :)
   - `docker ps` should list 8 services up
-- Check if prometheus [target](http://localhost:9090/targets) 'spring-actuator' is **up**
 - Open [Graylog](http://localhost:9000) with user admin, password admin
   - Go to System -> Inputs
   - Select input "GELF UDP" and Launch, fill it with:
@@ -60,9 +59,6 @@ $ sudo sysctl -w vm.max_map_count=262144
   - URL: http://elasticsearch:9200
   - Index name: micro-\*
   - Time field name: @timestamp
-  - Click "Save & Test"
-- Again go to Configuration->Datasources, "Add data source", choose Prometheus and input:
-  - URL: http://prometheus:9090
   - Click "Save & Test"
 - [Import](http://localhost:3000/dashboard/import) the Grafana dashboard file **grafana-dash.json**
 - Keep hitting `http://localhost:8080/info`, `http://localhost:8080/warn` and `http://localhost:8080/error` to check logs in Kibana/Graylog and numbers in Grafana. Also checkout Zipkin for the tracing.
