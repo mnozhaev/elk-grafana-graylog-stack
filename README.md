@@ -1,11 +1,10 @@
 # elk-prometheus-grafana-stack
 
-ELK + Prometheus + Grafana communication POC
+ELK + Grafana communication POC
 
 This is POC to understand better how this applications communicate with each other:
 
 - Grafana
-- Prometheus
 - Spring Boot
   - Actuator
   - Sleuth
@@ -13,7 +12,6 @@ This is POC to understand better how this applications communicate with each oth
 - Elasticsearch
 - Logstash
 - Kibana
-- Zipkin
 - Graylog
 
 First of all, increase linux virtual allowed space
@@ -31,15 +29,11 @@ $ sudo sysctl -w vm.max_map_count=262144
 | Grafana       | [localhost:3000](http://localhost:3000)   |
 | Graylog       | [localhost:9000](http://localhost:9000)   |
 | Kibana        | [localhost:5601](http://localhost:5601)   |
-| Jaeger        | [localhost:16686](http://localhost:16686) |
 | Logstash      | [localhost:9600](http://localhost:9600)   |
 | MongoDB       | [localhost:27017](http://localhost:27017) |
-| Prometheus    | [localhost:9090](http://localhost:9090)   |
-| Zipkin        | [localhost:9411](http://localhost:9411)   |
 
 # Steps
 
-- Open file prometheus.yml, on the last line change the spring-actuator target IP to your local IP (this will be fixed soon :) )
 - Start the Spring Boot demo app with `cd demo && ./gradlew bootRun`
 - Start docker-compose with `docker-compose -d up`)
   - Be patient, wait at least 5 minutes so all the services have plenty of time to comunicate with each other and setup the initial configuration. Grab a cup of coffee or tea or water or something more powerful :)
