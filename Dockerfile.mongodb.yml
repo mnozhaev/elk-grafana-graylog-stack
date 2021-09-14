@@ -1,0 +1,9 @@
+FROM mongo:3.6.13
+
+EXPOSE 27017
+
+VOLUME ["/data/db", "/data/configdb"]
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+CMD ["mongod"]

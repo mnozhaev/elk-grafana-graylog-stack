@@ -1,0 +1,145 @@
+version: "3.7"
+
+services:
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - "GF_SECURITY_ADMIN_PASSWORD=secret"
+    volumes:
+      - ./grafana-storage:/var/lib/grafana
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.8.1
+    environment:
+      - discovery.type=single-node
+      - http.port=9200
+      - http.cors.enabled=true
+      - http.cors.allow-origin=http://localhost:1358,http://127.0.0.1:1358,chrome-extension://jopjeaiilkcibeohjdmejhoifenbnmlh
+      - http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
+      - http.cors.allow-credentials=true
+    volumes:
+      - ./elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+   kibana:
+     image: docker.elastic.co/kibana/kibana:6.8.1
+     ports:
+       - "5601:5601"
+     depends_on:
+       - elasticsearch
+
+   logstash:
+     image: docker.elastic.co/logstash/logstash:6.8.1
+     ports:
+       - "5000:5000"
+       - "9600:9600"
+     volumes:
+       - ./logstash.conf:/etc/logstash/logstash.conf
+     command: logstash -f /etc/logstash/logstash.conf
+     depends_on:
+       - elasticsearch
+
+  mongodb:
+    image: mongo:3.6.13
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongodb-data:/data/db
+
+  graylog:
+    image: graylog/graylog:3.0.2
+    ports:
+      # Graylog web interface and API
+      - 9000:9000
+      # Syslog TCP
+      - 514:514
+      # Syslog UDP
+      - 514:514/udp
+      # GELF TCP
+      - 12201:12201
+      # GELF UDP
+      - 12201:12201/udp
+      - 12202:12202/udp
+      - 12203:12203/udp
+      - 12204:12204/udp
+    environment:
+      - GRAYLOG_ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - GRAYLOG_PASSWORD_SECRET=somepasswordpepper
+      # Password: admin
+      - GRAYLOG_ROOT_PASSWORD_SHA2=8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
+      - GRAYLOG_HTTP_EXTERNAL_URI=http://127.0.0.1:9000/
+    volumes:
+      - ./graylog-journal:/usr/share/graylog/data/journal
+      - ./graylog-config:/usr/share/graylog/data/config
+    links:
+      - mongodb:mongo
+      - elasticsearch
+    depends_on:
+      - elasticsearch
+      - mongodb
+
+  jaeger-collector:
+    image: jaegertracing/jaeger-collector:1.13
+    ports:
+      - "14269:14269"
+      - "14268:14268"
+      - "14267:14267"
+      - "9411:9411"
+    restart: on-failure
+    environment:
+      - SPAN_STORAGE_TYPE=elasticsearch
+    command: [
+      "--es.server-urls=http://elasticsearch:9200",
+      "--es.num-shards=1",
+      "--es.num-replicas=0",
+      "--log-level=error"
+    ]
+    depends_on:
+      - elasticsearch
+
+  jaeger-agent:
+    image: jaegertracing/jaeger-agent:1.13
+    hostname: jaeger-agent
+    command: ["--collector.host-port=jaeger-collector:14267"]
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+    restart: on-failure
+    environment:
+      - SPAN_STORAGE_TYPE=elasticsearch
+    depends_on:
+      - jaeger-collector
+
+  jaeger-query:
+    image: jaegertracing/jaeger-query:1.13
+    environment:
+      - SPAN_STORAGE_TYPE=elasticsearch
+      - no_proxy=localhost
+    ports:
+      - "16686:16686"
+      - "16687:16687"
+    restart: on-failure
+    command: [
+      "--es.server-urls=http://elasticsearch:9200",
+      "--span-storage.type=elasticsearch",
+      "--log-level=debug"
+    ]
+    depends_on:
+      - jaeger-agent
+
+volumes:
+  grafana-storage:
+  elasticsearch-data:
+  mongodb-data:
+  graylog-journal:
+  graylog-config:

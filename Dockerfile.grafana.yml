@@ -1,0 +1,11 @@
+FROM grafana/grafana:6.3.3
+
+ENV GF_SECURITY_ADMIN_PASSWORD="secret"
+
+EXPOSE 3000
+
+USER grafana
+
+VOLUME ["/var/lib/grafana"]
+
+ENTRYPOINT [ "/run.sh" ]
